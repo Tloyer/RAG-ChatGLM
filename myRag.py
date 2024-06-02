@@ -1,4 +1,4 @@
-OPENAI_API_KEY = "sk-proj-Sgoug5oMJ2oiwEgiUCSuT3BlbkFJEmxktjawVgiWUPIdoYZq"
+OPENAI_API_KEY = ""
 import dotenv
 
 dotenv.load_dotenv()
