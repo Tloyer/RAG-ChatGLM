@@ -1,4 +1,4 @@
-OPENAI_API_KEY = ""
+OPENAI_API_KEY = "填key"
 import dotenv
 
 dotenv.load_dotenv()
