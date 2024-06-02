@@ -3,9 +3,6 @@ import jieba
 from collections import Counter
 
 def preprocess_text(text):
-    """
-    文本预处理函数：去重、去除无关内容、文本清理等
-    """
     # 合并段落为一个字符串
     text = ' '.join(text)
 
@@ -58,12 +55,12 @@ def extract_key_info(text):
 
 
 def remove_duplicates(items):
-    """去除重复的项"""
+    # 去除重复的项
     return list(dict.fromkeys(items))
 
 
 def summarize_key_info(key_info):
-    """总结关键信息"""
+    # 总结关键信息
     summary = {
         'dates': remove_duplicates(key_info['dates']),
         'locations': remove_duplicates(key_info['locations']),

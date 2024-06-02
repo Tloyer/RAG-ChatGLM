@@ -38,7 +38,6 @@ def dataPre(articles_content):
         abstrct = get_glm.get_glm_response("请根据以下内容为我生成一篇摘要：" + preprocessed_text)
         # RAG摘要
 
-
         data['articles'].append({
             'article_id': i + 1,
             'raw_article': article,
@@ -51,11 +50,11 @@ def dataPre(articles_content):
 
 
 if __name__ == '__main__':
-    # urls = ["https://wallstreetcn.com/articles/3715085", "https://www.thepaper.cn/newsDetail_forward_27372275", "https://m.huxiu.com/article/3023873.html",
-    #         "https://www.uisdc.com/gpt-4o", "https://juejin.cn/post/7368701816441307187", "https://www.vivepostwave.com/13359/gpt-4o/",
-    #         "https://hao.cnyes.com/post/85542", "https://www.gvm.com.tw/article/112892", "https://www.163.com/dy/article/J24TME8S05118O92.html",
-    #         "https://news.sciencenet.cn/htmlnews/2024/5/522621.shtm"]
-    urls = ["https://www.gvm.com.tw/article/112892", "https://news.sciencenet.cn/htmlnews/2024/5/522621.shtm"]
+    urls = ["https://wallstreetcn.com/articles/3715085", "https://www.thepaper.cn/newsDetail_forward_27372275", "https://m.huxiu.com/article/3023873.html",
+            "https://www.uisdc.com/gpt-4o", "https://juejin.cn/post/7368701816441307187", "https://www.vivepostwave.com/13359/gpt-4o/",
+            "https://hao.cnyes.com/post/85542", "https://www.gvm.com.tw/article/112892", "https://www.163.com/dy/article/J24TME8S05118O92.html",
+            "https://news.sciencenet.cn/htmlnews/2024/5/522621.shtm"]
+
     articles_content = []
 
     autoFetchContent(urls)
