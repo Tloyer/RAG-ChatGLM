@@ -1,32 +1,33 @@
-OPENAI_API_KEY = "填key"
 import dotenv
 
 dotenv.load_dotenv()
-
 import requests
 import warnings
-from langchain_community.document_loaders import OnlinePDFLoader
+from langchain_community.document_loaders.pdf import OnlinePDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Weaviate
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Weaviate
 import weaviate
 from weaviate.embedded import EmbeddedOptions
 from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 from transformers import AutoTokenizer, AutoModel
 from peft import get_peft_model, LoraConfig, TaskType
+import json
+import pypdf
 
 
 def ragGenAbstract(context):
-    loader = OnlinePDFLoader("https://core.ac.uk/download/322982112.pdf")
+    loader = OnlinePDFLoader("/mnt/workspace/random/RAG-ChatGLM/2405.19103.pdf")
     data = loader.load()
+
     text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunks = text_splitter.split_documents(documents)
+    chunks = text_splitter.split_documents(data)
 
     client = weaviate.Client(
-        embedded_options=EmbeddedOptions()
+        embedded_options=weaviate.EmbeddedOptions()
     )
 
     vectorstore = Weaviate.from_documents(
@@ -79,11 +80,13 @@ def ragGenAbstract(context):
 if __name__ == '__main__':
     # 打开并读取JSON文件
     with open('articles.json', 'r', encoding='utf-8') as file:
-        articles = json.load(file)
+        context = json.load(file)
 
     # 遍历每条数据并生成ragAbstract
+    articles = context['articles']
+
     for article in articles:
-        processed_article = article.get('processed_article', '')
+        processed_article = article['processed_article']
 
         # 调用摘要生成函数
         rag_abstract = ragGenAbstract(processed_article)
