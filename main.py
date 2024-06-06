@@ -35,8 +35,7 @@ def dataPre(articles_content):
         # 提取关键词
         key_info = dataPreProcess.extract_key_info(preprocessed_text)
         # 生成摘要
-        abstrct = get_glm.get_glm_response("请根据以下内容为我生成一篇摘要：" + preprocessed_text)
-        # RAG摘要
+        abstrct = get_glm.get_glm_response("接下来我会为你发一篇材料，是李希在二十届中央纪委三次全会的工作报告，我需要在阅读它之后写一篇思想汇报，字数在1500字以上，请你为我写完。以下是材料内容：" + preprocessed_text)
 
         data['articles'].append({
             'article_id': i + 1,
@@ -45,16 +44,16 @@ def dataPre(articles_content):
             'processed_article': preprocessed_text,
             'abstrct' : abstrct
         })
-    with open('articles.json', 'w', encoding='utf-8') as f:
+    with open('myarticles.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
-    urls = ["https://wallstreetcn.com/articles/3715085", "https://www.thepaper.cn/newsDetail_forward_27372275", "https://m.huxiu.com/article/3023873.html",
-            "https://www.uisdc.com/gpt-4o", "https://juejin.cn/post/7368701816441307187", "https://www.vivepostwave.com/13359/gpt-4o/",
-            "https://hao.cnyes.com/post/85542", "https://www.gvm.com.tw/article/112892", "https://www.163.com/dy/article/J24TME8S05118O92.html",
-            "https://news.sciencenet.cn/htmlnews/2024/5/522621.shtm"]
-
+    # urls = ["https://wallstreetcn.com/articles/3715085", "https://www.thepaper.cn/newsDetail_forward_27372275", "https://m.huxiu.com/article/3023873.html",
+    #         "https://www.uisdc.com/gpt-4o", "https://juejin.cn/post/7368701816441307187", "https://www.vivepostwave.com/13359/gpt-4o/",
+    #         "https://hao.cnyes.com/post/85542", "https://www.gvm.com.tw/article/112892", "https://www.163.com/dy/article/J24TME8S05118O92.html",
+    #         "https://news.sciencenet.cn/htmlnews/2024/5/522621.shtm"]
+    urls = ["https://www.xuexi.cn/lgpage/detail/index.html?id=4456034376726455890&item_id=4456034376726455890"]
     articles_content = []
 
     autoFetchContent(urls)

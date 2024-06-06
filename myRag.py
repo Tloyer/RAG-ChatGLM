@@ -1,70 +1,50 @@
-import dotenv
-
-dotenv.load_dotenv()
-import requests
-import warnings
-from langchain_community.document_loaders.pdf import OnlinePDFLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Weaviate
-import weaviate
-from weaviate.embedded import EmbeddedOptions
+import os
+os.environ["OPENAI_API_KEY"] = ""
+import json
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from openai import OpenAI
+from langchain_community.document_loaders import TextLoader
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
-from transformers import AutoTokenizer, AutoModel
-from peft import get_peft_model, LoraConfig, TaskType
-import json
-import pypdf
 
 
-def ragGenAbstract(context):
-    loader = OnlinePDFLoader("/mnt/workspace/random/RAG-ChatGLM/2405.19103.pdf")
-    data = loader.load()
-
-    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunks = text_splitter.split_documents(data)
-
-    client = weaviate.Client(
-        embedded_options=weaviate.EmbeddedOptions()
+def ragGenerateAbstract(context):
+    # 加载数据
+    loader = TextLoader("./data.txt", encoding='utf-8')
+    documents = loader.load()
+    # 创建分割器
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=10)
+    # 拆分文档
+    documents = text_splitter.split_documents(documents)
+    # 将数据进行向量化
+    model_name = "moka-ai/m3e-base"
+    model_kwargs = {'device': 'cpu'}
+    encode_kwargs = {'normalize_embeddings': True}
+    embedding = HuggingFaceBgeEmbeddings(
+        model_name = model_name,
+        model_kwargs = model_kwargs,
+        encode_kwargs = encode_kwargs
     )
 
-    vectorstore = Weaviate.from_documents(
-        client=client,
-        documents=chunks,
-        embedding=OpenAIEmbeddings(),
-        by_text=False
-    )
+    persist_directory = 'db'
+    db = Chroma.from_documents(documents, embedding, persist_directory=persist_directory)
 
-    retriever = vectorstore.as_retriever()
+    # 检索
+    retriever = db.as_retriever()
+    # 增强
+    template = """
+        你是一个聊天助手，请根据以上内容，和我聊天。
+    """
 
-    template = """ 你是一个文本摘要生成助手，请结合以下检索增强的文本和我的输入，为我生成精炼的摘要。你的输出格式要以“摘要：”开头 """
-    prompt = ChatPromptTemplate.from_template(template)
-
+    prompt = ChatPromptTemplate.from_template("请根据以下内容生成一片摘要："+context)
+    print("prompt:")
     print(prompt)
 
-    # 调用模型
-    model_name = "/mnt/workspace/cache/chatglm2-6b"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
-
-    warnings.filterwarnings("ignore")
-
-    model.supports_gradient_checkpointing = True  # 节约cuda
-    model.gradient_checkpointing_enable()
-    model.enable_input_require_grads()
-
-    model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
-
-    peft_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM, inference_mode=False,
-        r=8,
-        lora_alpha=16,
-        lora_dropout=0,
-    )
-
-    llm = get_peft_model(model, peft_config)
+    llm = ChatOpenAI(model = "gpt-3.5-turbo",base_url="https://api.xty.app/v1")
 
     rag_chain = (
             {"context": retriever, "question": RunnablePassthrough()}
@@ -72,24 +52,29 @@ def ragGenAbstract(context):
             | llm
             | StrOutputParser()
     )
-    query = context
-    abstract = rag_chain.invoke(query)
-    return abstract
 
+    return rag_chain.invoke("请你根据以下内容生成一篇摘要。" )
 
 if __name__ == '__main__':
+
+    # 从环境变量中获取 OpenAI API 密钥
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if openai_api_key is None:
+        raise ValueError("OPENAI_API_KEY 环境变量未设置")
+
+    # 配置 OpenAI 客户端
+    openai_client = OpenAI(api_key=openai_api_key)
     # 打开并读取JSON文件
     with open('articles.json', 'r', encoding='utf-8') as file:
         context = json.load(file)
-
+    articles = context["articles"]
     # 遍历每条数据并生成ragAbstract
-    articles = context['articles']
-
     for article in articles:
-        processed_article = article['processed_article']
-
+        processed_article = article.get('processed_article', '')
+        print(processed_article)
         # 调用摘要生成函数
-        rag_abstract = ragGenAbstract(processed_article)
+        rag_abstract = ragGenerateAbstract(processed_article)
+        print(rag_abstract)
 
         # 将生成的摘要添加到文章数据中
         article['ragAbstract'] = rag_abstract
@@ -97,3 +82,4 @@ if __name__ == '__main__':
     # 将更新后的数据写回JSON文件
     with open('ragArticles.json', 'w', encoding='utf-8') as file:
         json.dump(articles, file, ensure_ascii=False, indent=4)
+
